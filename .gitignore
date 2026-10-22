@@ -1,0 +1,20 @@
+# Build output (recreated by ./build.sh, and by GitHub Actions on every push)
+deploy/
+
+# Dependencies (none today, but keep them out if any are added)
+node_modules/
+
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Local Claude Code settings (preview servers etc.)
+.claude/
+
+# Logs and local env files
+*.log
+.env
+.env.*

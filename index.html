@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KT Score">
+  <title>Kill Team Score Tracker</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    // Apply the saved theme before first paint to avoid a light/dark flash.
+    try {
+      var s = JSON.parse(localStorage.getItem('ktst:settings'));
+      if (s && s.theme) document.documentElement.dataset.theme = s.theme;
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <div class="app">
+    <!-- Top bar: title and match controls -->
+    <header class="topbar">
+      <h1>Kill Team <span>Scores</span></h1>
+      <button id="btn-undo" class="icon-btn" type="button" aria-label="Undo last change">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        <span class="lbl">Undo</span>
+      </button>
+      <button id="btn-new" class="icon-btn" type="button" aria-label="New game">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        <span class="lbl">New Game</span>
+      </button>
+      <button id="btn-settings" class="icon-btn" type="button" aria-label="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        <span class="lbl">Settings</span>
+      </button>
+    </header>
+
+    <!-- Turning point and who's leading -->
+    <section class="round-bar" aria-label="Turning point">
+      <div class="tp">
+        <button id="tp-prev" class="step" type="button" aria-label="Previous turning point">‹</button>
+        <div class="tp-display">
+          <span class="tp-label">Turning Point</span>
+          <span class="tp-number"><b id="tp-value">1</b><small id="tp-max">/ 4</small></span>
+        </div>
+        <button id="tp-next" class="step" type="button" aria-label="Next turning point">›</button>
+      </div>
+      <p id="status" class="status" aria-live="polite"></p>
+    </section>
+
+    <!-- Player panels are built by app.js -->
+    <main id="players" class="players"></main>
+
+    <footer class="footer">
+      <button id="btn-end" class="wide-btn" type="button" aria-describedby="end-hint">End Game &amp; Choose Primary Op</button>
+      <p id="end-hint" class="footer-hint">Available in Turning Point 4</p>
+    </footer>
+  </div>
+
+  <!-- New game confirmation -->
+  <dialog id="dlg-new" aria-labelledby="dlg-new-title">
+    <form method="dialog">
+      <h2 id="dlg-new-title">Start a new game?</h2>
+      <p>All victory points, command points and the turning point will be reset. You can still undo this.</p>
+      <label class="check">
+        <input type="checkbox" name="clearNames">
+        <span>Also clear player names, kill teams and colours</span>
+      </label>
+      <div class="dialog-actions">
+        <button type="submit" value="cancel" class="btn">Cancel</button>
+        <button type="submit" value="confirm" class="btn primary" autofocus>New Game</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Advance turning point: offer CP to each player -->
+  <dialog id="dlg-tp" aria-labelledby="dlg-tp-title">
+    <form method="dialog">
+      <h2 id="dlg-tp-title">Next turning point</h2>
+      <p>Add command points to each player?</p>
+      <div class="cp-gains">
+        <label><span class="cp-gain-name" data-player="0">Player 1</span>
+          <input name="gain0" type="number" inputmode="numeric" min="0" max="20" required></label>
+        <label><span class="cp-gain-name" data-player="1">Player 2</span>
+          <input name="gain1" type="number" inputmode="numeric" min="0" max="20" required></label>
+      </div>
+      <div class="dialog-actions">
+        <button type="submit" value="cancel" class="btn" formnovalidate>Cancel</button>
+        <button type="submit" value="skip" class="btn" formnovalidate>Skip CP</button>
+        <button type="submit" value="add" class="btn primary" autofocus>Add CP</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Settings -->
+  <dialog id="dlg-settings" aria-labelledby="dlg-settings-title">
+    <form method="dialog" id="settings-form">
+      <h2 id="dlg-settings-title">Settings</h2>
+      <fieldset>
+        <legend>Victory point caps</legend>
+        <div class="field-grid" id="cap-fields"><!-- filled from Store.CATEGORIES --></div>
+      </fieldset>
+      <fieldset>
+        <legend>Command points</legend>
+        <div class="field-grid">
+          <label>Starting CP
+            <input name="startingCP" type="number" inputmode="numeric" min="0" max="99" required></label>
+          <label>CP cap
+            <input name="cpCap" type="number" inputmode="numeric" min="0" max="99" placeholder="No cap"></label>
+        </div>
+        <label class="check">
+          <input type="checkbox" name="promptCPOnAdvance">
+          <span>Offer CP when advancing the turning point</span>
+        </label>
+        <div class="field-grid">
+          <label>CP offered per TP
+            <input name="cpPerTurningPoint" type="number" inputmode="numeric" min="0" max="20" required></label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Match</legend>
+        <div class="field-grid">
+          <label>Turning points
+            <input name="turningPoints" type="number" inputmode="numeric" min="1" max="10" required></label>
+          <label>Theme
+            <select name="theme">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select></label>
+        </div>
+      </fieldset>
+      <p class="hint">Starting CP applies the next time you start a new game. Lowering a cap trims any scores above it (undoable).</p>
+      <div class="dialog-actions">
+        <button type="submit" value="cancel" class="btn" formnovalidate>Cancel</button>
+        <button type="submit" value="save" class="btn primary" autofocus>Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- End of game: each player chooses their Primary Op (built by app.js) -->
+  <dialog id="dlg-primary" aria-labelledby="dlg-primary-title">
+    <form method="dialog">
+      <h2 id="dlg-primary-title">Choose Primary Op</h2>
+      <p id="primary-rules"></p>
+      <div id="primary-picks" class="picks"></div>
+      <div class="dialog-actions">
+        <button type="submit" value="cancel" class="btn" formnovalidate>Back to Game</button>
+        <button type="submit" value="confirm" class="btn primary" id="primary-confirm" disabled>Confirm &amp; End Game</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- End-of-game summary -->
+  <dialog id="dlg-summary" aria-labelledby="dlg-summary-title">
+    <form method="dialog">
+      <h2 id="dlg-summary-title">Game over</h2>
+      <p id="summary-result" class="summary-result"></p>
+      <table class="summary-table" id="summary-table"></table>
+      <div class="dialog-actions">
+        <button type="submit" value="resume" class="btn">Back to Game</button>
+        <button type="submit" value="new" class="btn primary" autofocus>New Game</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/data/killTeams.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

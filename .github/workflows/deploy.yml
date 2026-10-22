@@ -1,0 +1,49 @@
+# Build the app and publish it to GitHub Pages on every push to main.
+# Can also be run by hand from the repository's Actions tab.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Needed to publish to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deploy at a time; a newer push replaces a queued one
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      # The site is served from https://<user>.github.io/<repo>/, so build for
+      # that sub-path (taken from the repository name).
+      - name: Build
+        run: BASE_PATH="/${{ github.event.repository.name }}/" ./build.sh
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: deploy
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
