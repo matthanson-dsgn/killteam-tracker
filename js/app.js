@@ -316,21 +316,6 @@
 
   /* ---------- End of game ---------- */
 
-  // Describe the Primary Op bonus bands from calculatePrimaryBonus itself,
-  // e.g. "5–6 VP → +3 · 3–4 VP → +2 · 1–2 VP → +1 · 0 VP → +0", so the
-  // help text can never disagree with the rule.
-  function describeBonusBands() {
-    const maxCap = Math.max(...S.CATEGORIES.map((c) => S.state.settings.caps[c.key]));
-    const bands = [];
-    for (let vp = maxCap; vp >= 0; vp--) {
-      const bonus = S.calculatePrimaryBonus(vp);
-      const band = bands[bands.length - 1];
-      if (band && band.bonus === bonus) band.low = vp;
-      else bands.push({ bonus, low: vp, high: vp });
-    }
-    return bands.map((b) => `${b.low === b.high ? b.low : `${b.low}–${b.high}`} VP → +${b.bonus}`).join(' · ');
-  }
-
   // Each player picks the category their Primary Op bonus is based on.
   // Choices stay local to the dialog until both are confirmed.
   function openPrimaryChooser() {
@@ -340,7 +325,6 @@
     const picks = $('#primary-picks');
     const confirm = $('#primary-confirm');
 
-    $('#primary-rules').textContent = `Bonus from the chosen category's final score: ${describeBonusBands()}.`;
     picks.innerHTML = players.map((p, i) => {
       const name = escapeHtml(playerLabel(p, i));
       return `
@@ -349,9 +333,7 @@
           <div class="pick-options" role="radiogroup" aria-label="${name} Primary Op">
             ${S.CATEGORIES.map((c) => `
               <button type="button" class="pick-option" role="radio" aria-checked="false"
-                      data-key="${c.key}" aria-label="${c.label}: ${p.vp[c.key]} VP">
-                <span>${c.label}</span><b>${p.vp[c.key]} VP</b>
-              </button>`).join('')}
+                      data-key="${c.key}">${c.label}</button>`).join('')}
           </div>
           <p class="pick-preview" aria-live="polite"></p>
         </section>`;
@@ -366,13 +348,11 @@
         });
         const preview = $('.pick-preview', section);
         const choice = choices[i];
-        if (choice) {
-          const bonus = S.primaryBonusFor(p, choice);
-          preview.textContent = `${S.categoryLabel(choice)} chosen: +${bonus} VP → Total ${S.baseTotal(p) + bonus}`;
-        } else {
-          preview.textContent = `Not chosen yet · ${S.baseTotal(p)} VP so far`;
-        }
-        preview.classList.toggle('is-chosen', Boolean(choice));
+        // Bonus preview only once a choice is made
+        const bonus = choice ? S.primaryBonusFor(p, choice) : 0;
+        preview.textContent = choice
+          ? `${S.categoryLabel(choice)} chosen: +${bonus} VP → Total ${S.baseTotal(p) + bonus}`
+          : '';
       });
       confirm.disabled = choices.includes(null);
     }

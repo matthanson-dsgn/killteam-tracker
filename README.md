@@ -89,7 +89,7 @@ Default player names and colours are in `DEFAULT_PLAYERS` in the same file.
 These are in the **Scoring rules** section near the top of [`js/store.js`](js/store.js):
 
 - **Primary Op bonus:** `calculatePrimaryBonus(categoryVP)` (5–6 → +3, 3–4 → +2, 1–2 → +1,
-  0 → +0). The score limit, the bonus help text in the chooser and the summary all follow this
+  0 → +0). The score limit, the chooser preview and the summary all follow this
   function, so changing it is a one-place edit.
 - **Turning Point 1 lock:** `LOCKED_UNTIL_TP` (`{ crit: 2, tac: 2 }` means scoring opens at TP2).
 - **Initiative CP:** `INITIATIVE_CP = 1` and `NON_INITIATIVE_CP = 2`, used when advancing the
