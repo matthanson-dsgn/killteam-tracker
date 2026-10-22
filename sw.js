@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.open(CACHE_VERSION).then((cache) =>
       cache.match(request, { ignoreSearch: true })
-        // Any page URL gets the app (mirrors the Netlify _redirects rule offline).
+        // Any page URL gets the app (mirrors the GitHub Pages 404.html fallback offline).
         .then((hit) => hit || (request.mode === 'navigate' ? cache.match('./index.html') : undefined))
         .then((cached) => {
           const network = fetch(request)

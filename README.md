@@ -16,44 +16,30 @@ python3 -m http.server 8000
 
 Then open <http://localhost:8000>. (`npx serve` works too.)
 
-To use it on your phone at the table, host it on any static host and open it once while online.
-After that it works offline, and you can use **Add to Home Screen** (iOS Safari) or
-**Install app** (Chrome/Android).
+To use it on your phone at the table, open the live site once while online. After that it works
+offline, and you can use **Add to Home Screen** (iOS Safari) or **Install app** (Chrome/Android).
 
-## Deploying to GitHub Pages (automatic)
+## Publishing (GitHub Pages)
 
 Live at **<https://matthanson-dsgn.github.io/killteam-tracker/>**.
 
-Every push to `main` runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), which
-runs `BASE_PATH=/killteam-tracker/ ./build.sh` and publishes `deploy/` to GitHub Pages. To publish
-a change:
+Push to `main` and GitHub Actions deploys automatically:
 
 ```bash
 git add -A && git commit -m "Describe the change" && git push
 ```
 
 Check progress in the repository's **Actions** tab: a green tick means the site is updated, a red
-cross means it failed (click it to see why). You can re-run a deploy from there with
-**Run workflow**.
+cross means it failed (click it to see why).
 
-`BASE_PATH` makes asset, manifest and service worker paths work under `/killteam-tracker/`. If the
-repository is ever renamed, the workflow picks up the new name automatically.
-
-## Deploying to Netlify Drop
-
-```bash
-./build.sh
-```
-
-This creates a `deploy/` folder containing only the files needed to run the app, plus a
-`_redirects` file (`/*  /index.html  200`) so refreshing any URL never gives a 404. Drag the
-`deploy` folder onto <https://app.netlify.com/drop>.
-
-**After making changes:** run `./build.sh` again and drag the new `deploy` folder onto your
-site's **Deploys** page in Netlify. Dropping it on the main Drop page instead creates a new site
-with a new URL. The build stamps `sw.js` with a cache version based on the file contents, so
-installed phones pick up the new version automatically the next time they open the app online.
-You don't need to bump `CACHE_VERSION` by hand for deploys.
+How it works: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs
+`BASE_PATH=/killteam-tracker/ ./build.sh`, which copies the app into `deploy/` (build output, not
+committed) and publishes that folder.
+- `BASE_PATH` makes asset, manifest and service worker paths work under `/killteam-tracker/`.
+  The workflow takes it from the repository name, so a rename needs no changes.
+- `index.html` is also copied to `404.html`, so refreshing or opening any URL shows the app.
+- `sw.js` gets a cache version based on the file contents, so installed phones pick up each
+  deploy automatically. There's no need to bump `CACHE_VERSION` by hand.
 
 If you add a new file the app needs at runtime, add it to `FILES` in `build.sh` and `APP_SHELL`
 in `sw.js`.
@@ -111,8 +97,7 @@ These are in the **Scoring rules** section near the top of [`js/store.js`](js/st
 
 Edit [`js/data/killTeams.js`](js/data/killTeams.js). Add the team name to the right alliance group
 (or add a new group). Teams are sorted alphabetically automatically. It's a plain script rather than
-JSON so the app still works when `index.html` is opened straight from disk. Rebuild with
-`./build.sh` afterwards.
+JSON so the app still works when `index.html` is opened straight from disk. Push to `main` to publish the updated list.
 
 Saved settings take priority over these defaults. To see your new defaults, clear the site's data
 (or run `localStorage.clear()` in the browser console).
@@ -146,7 +131,7 @@ icons/                App icons
 
 - **Add a VP category:** add it to `CATEGORIES` and `DEFAULT_SETTINGS.caps` in `store.js`.
   The counters, totals, settings, Primary Op choices and summary all update automatically.
-- **After changing any file**, rebuild with `./build.sh` (which updates the cache version for you).
+- **After changing any file**, push to `main`; the deploy rebuilds and updates the cache version for you.
 
 ## Storage keys
 

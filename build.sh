@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
-# build.sh — copy the files needed to run the app into ./deploy, ready to
-# publish as a static site (Netlify Drop, GitHub Pages, ...).
+# build.sh — copy the files needed to run the app into ./deploy, which the
+# GitHub Actions workflow (.github/workflows/deploy.yml) publishes to
+# GitHub Pages.
 #
 # No build tools are needed: the app is plain HTML/CSS/JS. This script just
 # copies the runtime files and makes a few deploy-only tweaks:
@@ -9,12 +10,12 @@
 #      installed phones always pick up a new deploy (no manual bump needed).
 #   2. Adds <base href="BASE_PATH"> to index.html so assets load from the
 #      app's root even if the page is opened at a nested URL.
-#   3. Adds fallbacks so unknown URLs show the app instead of a 404:
-#      _redirects (Netlify) and 404.html (GitHub Pages).
+#   3. Copies index.html to 404.html, so refreshing or opening any URL
+#      under the site shows the app instead of GitHub Pages' 404 page.
 #
 # Usage:
-#   ./build.sh                                  # site served from the root, e.g. Netlify
-#   BASE_PATH=/killteam-tracker/ ./build.sh     # GitHub Pages project site
+#   BASE_PATH=/killteam-tracker/ ./build.sh     # GitHub Pages (what the workflow runs)
+#   ./build.sh                                  # served from "/", e.g. a local test server
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -58,9 +59,8 @@ sed -i.bak "s|<meta charset=\"utf-8\">|<meta charset=\"utf-8\"> <base href=\"$BA
 
 rm -f "$OUT"/*.bak
 
-# 3. Show the app for unknown URLs instead of a 404
-printf '/*  %sindex.html  200\n' "$BASE_PATH" > "$OUT/_redirects"   # Netlify
-cp "$OUT/index.html" "$OUT/404.html"                                 # GitHub Pages
+# 3. GitHub Pages serves 404.html for unknown URLs: make that the app too
+cp "$OUT/index.html" "$OUT/404.html"
 
 echo "Built $OUT/ for $BASE_PATH (cache version ktst-$HASH):"
 (cd "$OUT" && find . -type f | sort | sed 's|^\./|  |')
