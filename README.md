@@ -20,6 +20,25 @@ To use it on your phone at the table, host it on any static host and open it onc
 After that it works offline, and you can use **Add to Home Screen** (iOS Safari) or
 **Install app** (Chrome/Android).
 
+## Deploying to GitHub Pages (automatic)
+
+Live at **<https://matthanson-dsgn.github.io/killteam-tracker/>**.
+
+Every push to `main` runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), which
+runs `BASE_PATH=/killteam-tracker/ ./build.sh` and publishes `deploy/` to GitHub Pages. To publish
+a change:
+
+```bash
+git add -A && git commit -m "Describe the change" && git push
+```
+
+Check progress in the repository's **Actions** tab: a green tick means the site is updated, a red
+cross means it failed (click it to see why). You can re-run a deploy from there with
+**Run workflow**.
+
+`BASE_PATH` makes asset, manifest and service worker paths work under `/killteam-tracker/`. If the
+repository is ever renamed, the workflow picks up the new name automatically.
+
 ## Deploying to Netlify Drop
 
 ```bash
