@@ -35,6 +35,7 @@ FILES=(
   sw.js
   css/styles.css
   js/data/killTeams.js
+  js/data/howToPlay.js
   js/store.js
   js/app.js
   icons/icon.svg

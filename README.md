@@ -54,7 +54,9 @@ in `sw.js`.
 - Total VP out of 21 (6 + 6 + 6 + up to 3 from the Primary Op bonus), with a progress bar and
   leader highlight.
 - Command Points in a separate violet section above the VP counters. They never count towards VP.
-- Turning point tracker, with an optional prompt to add CP when you advance.
+- Turning point tracker. When you advance, pick who has the initiative: they gain +1 CP and the
+  other player gains +2 CP (one undo step reverts both CP and the turning point).
+- **How to play** button with a quick reference for the Strategy and Firefight phases.
 - **End Game & Choose Primary Op** (final turning point only): each player picks Crit, Tac or
   Kill Op, with a live preview of the bonus and new total. Then an end-of-game summary shows the
   breakdown, the Primary Op bonus and the winner or a draw.
@@ -76,7 +78,6 @@ const DEFAULT_SETTINGS = {
   cpCap: null,            // null = no cap
   turningPoints: 4,
   promptCPOnAdvance: true,
-  cpPerTurningPoint: 1,
   theme: 'dark',
 };
 ```
@@ -91,7 +92,14 @@ These are in the **Scoring rules** section near the top of [`js/store.js`](js/st
   0 → +0). The score limit, the bonus help text in the chooser and the summary all follow this
   function, so changing it is a one-place edit.
 - **Turning Point 1 lock:** `LOCKED_UNTIL_TP` (`{ crit: 2, tac: 2 }` means scoring opens at TP2).
+- **Initiative CP:** `INITIATIVE_CP = 1` and `NON_INITIATIVE_CP = 2`, used when advancing the
+  turning point.
 - **End Game** is enabled on the final turning point (the "Turning points" setting, default 4).
+
+### Editing the How to play guide
+
+Edit [`js/data/howToPlay.js`](js/data/howToPlay.js). Each section has a heading, an optional intro,
+and a numbered or bulleted list; items can have a bold lead-in and a nested sub-list.
 
 ### Updating the kill team list
 
@@ -108,6 +116,7 @@ Saved settings take priority over these defaults. To see your new defaults, clea
 index.html            App shell and dialogs
 css/styles.css        Theme tokens (dark/light), layout, animations
 js/data/killTeams.js  Kill team list for the dropdown, grouped by alliance
+js/data/howToPlay.js  Content for the How to play modal
 js/store.js           State, game rules, persistence, undo  ← start here
 js/app.js             Builds the UI, renders state, handles taps
 sw.js                 Service worker (offline cache)

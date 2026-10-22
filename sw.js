@@ -12,6 +12,7 @@ const APP_SHELL = [
   './index.html',
   './css/styles.css',
   './js/data/killTeams.js',
+  './js/data/howToPlay.js',
   './js/store.js',
   './js/app.js',
   './manifest.webmanifest',

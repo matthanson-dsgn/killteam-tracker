@@ -51,7 +51,7 @@
         <div class="total">
           <span class="total-value">0</span><span class="total-limit">/ 0</span>
         </div>
-        <div class="total-caption">Victory Points · Primary at end</div>
+        <div class="total-caption">Victory Points</div>
         <div class="progress" role="progressbar" aria-valuemin="0"><span class="progress-fill"></span></div>
       </div>
 
@@ -256,20 +256,47 @@
     if (match.turningPoint >= settings.turningPoints) return openPrimaryChooser();
     if (!settings.promptCPOnAdvance) return S.advanceTurningPoint(null);
 
-    const dlg = $('#dlg-tp');
-    const form = dlg.querySelector('form');
+    // Pick who has the initiative; that decides each player's CP gain.
+    // The choice stays local to the dialog until Continue.
+    let initiative = null;
+    const picks = $('#initiative-picks');
+    const cont = $('#initiative-continue');
+
     $('#dlg-tp-title').textContent = `Start turning point ${match.turningPoint + 1}`;
-    match.players.forEach((p, i) => {
-      dlg.querySelector(`.cp-gain-name[data-player="${i}"]`).textContent = playerLabel(p, i);
-      form.elements[`gain${i}`].value = settings.cpPerTurningPoint;
-    });
-    openDialog(dlg, (result) => {
-      if (result === 'add') {
-        const gains = [0, 1].map((i) => parseInt(form.elements[`gain${i}`].value, 10) || 0);
-        S.advanceTurningPoint(gains);
-      } else if (result === 'skip') {
-        S.advanceTurningPoint(null);
-      }
+    $('#initiative-rule').textContent = 'Who has the initiative? ' +
+      `They gain +${S.INITIATIVE_CP} CP; the other player gains +${S.NON_INITIATIVE_CP} CP.`;
+    picks.innerHTML = match.players.map((p, i) => `
+      <section class="init-pick" data-player="${i}">
+        <h3><span class="swatch" style="background:${escapeHtml(p.color)}"></span>${escapeHtml(playerLabel(p, i))}</h3>
+        <button type="button" class="init-btn" aria-pressed="false"
+                aria-label="${escapeHtml(playerLabel(p, i))} has initiative">Has initiative</button>
+        <p class="init-preview" aria-live="polite"></p>
+      </section>`).join('');
+
+    function update() {
+      const gains = initiative === null ? null : S.initiativeGains(initiative);
+      match.players.forEach((p, i) => {
+        const section = $(`.init-pick[data-player="${i}"]`, picks);
+        $('.init-btn', section).setAttribute('aria-pressed', String(initiative === i));
+        section.classList.toggle('has-initiative', initiative === i);
+        $('.init-preview', section).textContent = gains
+          ? `+${gains[i]} CP${initiative === i ? ' (initiative)' : ''}`
+          : '';
+      });
+      cont.disabled = initiative === null;
+    }
+
+    picks.onclick = (e) => {
+      const btn = e.target.closest('.init-btn');
+      if (!btn) return;
+      initiative = Number(btn.closest('.init-pick').dataset.player);
+      update();
+    };
+    update();
+
+    openDialog($('#dlg-tp'), (result) => {
+      // CP and turning point change together, as a single undo step.
+      if (result === 'continue' && initiative !== null) S.advanceWithInitiative(initiative);
     });
   }
 
@@ -387,6 +414,38 @@
     });
   }
 
+  /* ---------- How to play ---------- */
+
+  // Built once from js/data/howToPlay.js.
+  function renderHowToPlay() {
+    const item = (it) => `
+      <li>${it.term ? `<strong>${escapeHtml(it.term)}:</strong> ` : ''}${escapeHtml(it.text)}
+        ${it.children && it.children.length
+          ? `<ul>${it.children.map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul>` : ''}
+      </li>`;
+    $('#howto-content').innerHTML = window.HowToPlay.sections.map((s) => {
+      const list = s.ordered ? 'ol' : 'ul';
+      return `
+        <section>
+          <h3>${escapeHtml(s.title)}</h3>
+          ${s.intro ? `<p>${escapeHtml(s.intro)}</p>` : ''}
+          <${list}>${s.items.map(item).join('')}</${list}>
+        </section>`;
+    }).join('');
+  }
+  renderHowToPlay();
+
+  const howto = $('#dlg-howto');
+  function openHowToPlay() {
+    howto.showModal();
+    $('.howto-inner', howto).scrollTop = 0;
+  }
+  // Close when tapping the backdrop (outside the content). The close button
+  // and Escape are handled natively by the dialog form.
+  howto.addEventListener('click', (e) => {
+    if (e.target === howto) howto.close();
+  });
+
   /* ---------- Settings ---------- */
 
   // Cap inputs are generated from the category list so adding a category
@@ -404,7 +463,6 @@
     f.startingCP.value = s.startingCP;
     f.cpCap.value = s.cpCap == null ? '' : s.cpCap;
     f.promptCPOnAdvance.checked = s.promptCPOnAdvance;
-    f.cpPerTurningPoint.value = s.cpPerTurningPoint;
     f.turningPoints.value = s.turningPoints;
     f.theme.value = s.theme;
 
@@ -421,7 +479,6 @@
         startingCP: int('startingCP', s.startingCP),
         cpCap: f.cpCap.value.trim() === '' ? null : int('cpCap', null),
         promptCPOnAdvance: f.promptCPOnAdvance.checked,
-        cpPerTurningPoint: int('cpPerTurningPoint', s.cpPerTurningPoint),
         turningPoints: Math.max(1, int('turningPoints', s.turningPoints)),
         theme: f.theme.value === 'light' ? 'light' : 'dark',
       });
@@ -473,6 +530,7 @@
   }
 
   $('#btn-undo').addEventListener('click', undo);
+  $('#btn-howto').addEventListener('click', openHowToPlay);
   $('#btn-new').addEventListener('click', openNewGame);
   $('#btn-settings').addEventListener('click', openSettings);
   $('#btn-end').addEventListener('click', () => (S.state.match.ended ? showSummary() : openPrimaryChooser()));

@@ -121,7 +121,7 @@ button {
   fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
 .icon-btn .lbl { display: none; }
-@media (min-width: 640px) { .icon-btn .lbl { display: inline; } }
+@media (min-width: 780px) { .icon-btn .lbl { display: inline; } }
 
 /* ---------- Turning point bar ---------- */
 
@@ -381,7 +381,7 @@ fieldset { margin: 0 0 12px; padding: 12px; border: 1px solid var(--border); bor
 legend { padding: 0 6px; font-weight: 700; }
 
 .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 10px; }
-.field-grid label, .cp-gains label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 0.9rem; }
+.field-grid label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 0.9rem; }
 
 dialog input[type="number"], dialog select {
   min-height: 48px;
@@ -395,8 +395,51 @@ dialog input[type="number"], dialog select {
 .check { display: flex; align-items: center; gap: 12px; min-height: 48px; margin: 4px 0; font-weight: 600; cursor: pointer; }
 .check input { width: 24px; height: 24px; flex: none; accent-color: var(--primary); }
 
-.cp-gains { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px; }
-.cp-gain-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Next turning point: who has initiative */
+.initiative-picks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.init-pick { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.init-pick h3 { display: flex; align-items: center; margin: 0; font-size: 1.05rem; overflow-wrap: anywhere; }
+.init-pick .swatch { flex: none; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+.init-btn {
+  min-height: 64px;
+  padding: 8px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--surface-2);
+  font-weight: 800;
+  transition: transform 0.08s, background 0.15s, border-color 0.15s;
+}
+.init-btn:active { transform: scale(0.95); }
+.init-btn[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+.init-btn[aria-pressed="true"]::before { content: "✓ "; }
+.init-preview { margin: 0; min-height: 1.4em; font-weight: 800; color: var(--cp-text); }
+
+/* How to play: scrollable content with a pinned header */
+dialog.howto { padding: 0; width: min(36rem, calc(100% - 32px)); overflow: hidden; }
+.howto-inner { max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; padding: 0 20px 20px; }
+.howto-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.howto-head h2 { margin: 0; }
+.howto-content h3 { margin: 20px 0 6px; font-size: 1.15rem; }
+.howto-content p { margin: 0 0 8px; color: var(--muted); }
+.howto-content ol, .howto-content ul { margin: 0; padding-left: 1.4em; }
+.howto-content li { margin: 6px 0; line-height: 1.45; }
+.howto-content li ul { margin-top: 4px; }
+.howto-content strong { color: var(--text); }
 
 .hint { font-size: 0.85rem; }
 
@@ -462,5 +505,5 @@ dialog input[type="number"], dialog select {
 
 @media (prefers-reduced-motion: reduce) {
   .pulse { animation: none; }
-  .step, .icon-btn, .btn, .wide-btn, .pick-option, .progress-fill, .player { transition: none; }
+  .step, .icon-btn, .btn, .wide-btn, .pick-option, .init-btn, .progress-fill, .player { transition: none; }
 }

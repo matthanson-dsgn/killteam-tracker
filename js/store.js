@@ -12,8 +12,8 @@
  *     startingCP: number,                  // CP each player starts a new game with
  *     cpCap: number | null,                // null = no upper limit
  *     turningPoints: number,               // number of TPs in a match
- *     promptCPOnAdvance: boolean,          // ask to add CP when advancing a TP
- *     cpPerTurningPoint: number,           // CP offered per player in that prompt
+ *     promptCPOnAdvance: boolean,          // ask who has initiative (and add CP)
+ *                                          // when advancing a TP
  *     theme: 'dark' | 'light',
  *   }
  *
@@ -67,7 +67,6 @@
     cpCap: null,
     turningPoints: 4,
     promptCPOnAdvance: true,
-    cpPerTurningPoint: 1,
     theme: 'dark',
   };
 
@@ -80,6 +79,11 @@
   const IDENTITY_FIELDS = ['name', 'faction', 'customFaction', 'color'];
 
   /* ---------- Scoring rules ---------- */
+
+  // CP gained when advancing to the next turning point. The player with
+  // initiative goes first and gets less CP than the player going second.
+  const INITIATIVE_CP = 1;
+  const NON_INITIATIVE_CP = 2;
 
   // Primary Op bonus, based on the final VP in the category the player chose.
   // Change the thresholds here; the score limit and UI follow automatically.
@@ -295,6 +299,15 @@
     });
   }
 
+  // CP each player gains when player `initiativeIndex` has the initiative.
+  const initiativeGains = (initiativeIndex) =>
+    [0, 1].map((i) => (i === initiativeIndex ? INITIATIVE_CP : NON_INITIATIVE_CP));
+
+  // Advance the turning point and award initiative CP as one undo step.
+  function advanceWithInitiative(initiativeIndex) {
+    return advanceTurningPoint(initiativeGains(initiativeIndex));
+  }
+
   function previousTurningPoint() {
     return commit((m) => {
       if (m.turningPoint <= 1) return false;
@@ -371,6 +384,8 @@
   window.Store = {
     CATEGORIES,
     LOCKED_UNTIL_TP,
+    INITIATIVE_CP,
+    NON_INITIATIVE_CP,
     DEFAULT_SETTINGS,
     state,
     calculatePrimaryBonus,
@@ -388,6 +403,8 @@
     adjustCP,
     setPlayerInfo,
     advanceTurningPoint,
+    initiativeGains,
+    advanceWithInitiative,
     previousTurningPoint,
     finishGame,
     resumeGame,
