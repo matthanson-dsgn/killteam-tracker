@@ -245,6 +245,10 @@
     player.faction === window.KillTeams.OTHER ? player.customFaction.trim() : player.faction
   );
 
+  // A player's colour, falling back to their default if unset or invalid.
+  const playerColor = (player, i) =>
+    (/^#[0-9a-f]{6}$/i.test(player.color || '') ? player.color : DEFAULT_PLAYERS[i].color);
+
   const categoryLabel = (key) => (CATEGORIES.find((c) => c.key === key) || {}).label || '';
 
   const cpMax = () => (state.settings.cpCap == null ? Infinity : state.settings.cpCap);
@@ -396,6 +400,7 @@
     isCategoryLocked,
     canEndGame,
     killTeamName,
+    playerColor,
     categoryLabel,
     cpMax,
     leader,

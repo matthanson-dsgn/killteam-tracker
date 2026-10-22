@@ -61,8 +61,7 @@
     <main id="players" class="players"></main>
 
     <footer class="footer">
-      <button id="btn-end" class="wide-btn" type="button" aria-describedby="end-hint">End Game &amp; Choose Primary Op</button>
-      <p id="end-hint" class="footer-hint">Available in Turning Point 4</p>
+      <button id="btn-end" class="wide-btn" type="button" hidden>End Game &amp; Choose Primary Op</button>
     </footer>
   </div>
 
@@ -86,7 +85,6 @@
   <dialog id="dlg-tp" aria-labelledby="dlg-tp-title">
     <form method="dialog">
       <h2 id="dlg-tp-title">Next turning point</h2>
-      <p id="initiative-rule"></p>
       <div id="initiative-picks" class="initiative-picks"><!-- built by app.js --></div>
       <div class="dialog-actions">
         <button type="submit" value="cancel" class="btn">Cancel</button>

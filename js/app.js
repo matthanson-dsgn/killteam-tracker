@@ -17,6 +17,23 @@
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
   ));
 
+  // Dark or light text, whichever contrasts more with a #rrggbb background
+  // (WCAG relative luminance and contrast ratio).
+  const DARK_TEXT = '#111418';
+  const LIGHT_TEXT = '#ffffff';
+  function readableTextOn(hex) {
+    const luminance = (h) => {
+      const [r, g, b] = [1, 3, 5].map((n) => {
+        const c = parseInt(h.slice(n, n + 2), 16) / 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const contrast = (l1, l2) => (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    const bg = luminance(hex);
+    return contrast(bg, luminance(DARK_TEXT)) >= contrast(bg, luminance(LIGHT_TEXT)) ? DARK_TEXT : LIGHT_TEXT;
+  }
+
   // Display name for a player, falling back to "Player N" if left blank.
   const playerLabel = (p, i) => p.name.trim() || `Player ${i + 1}`;
 
@@ -116,13 +133,13 @@
     const el = panels[i];
     const label = playerLabel(p, i);
 
-    el.style.setProperty('--player', p.color);
+    el.style.setProperty('--player', S.playerColor(p, i));
     setInput($('[data-field="name"]', el), p.name);
     setInput($('[data-field="faction"]', el), p.faction);
     const custom = $('[data-field="customFaction"]', el);
     setInput(custom, p.customFaction);
     custom.hidden = p.faction !== window.KillTeams.OTHER;
-    setInput($('[data-field="color"]', el), p.color);
+    setInput($('[data-field="color"]', el), S.playerColor(p, i));
 
     el.classList.toggle('is-leading', lead === i);
     $('.lead-badge', el).hidden = lead !== i;
@@ -186,20 +203,21 @@
     next.classList.toggle('is-end', lastTp);
     next.setAttribute('aria-label', lastTp ? 'End game and choose Primary Op' : `Advance to turning point ${tp + 1}`);
 
-    // End game: only on the final turning point (or to reopen the summary)
-    const canEnd = S.canEndGame() || match.ended;
-    $('#btn-end').disabled = !canEnd;
-    const endHint = $('#end-hint');
-    endHint.textContent = `Available in Turning Point ${settings.turningPoints}`;
-    endHint.hidden = canEnd;
+    // End game: only shown on the final turning point (or to reopen the summary)
+    $('#btn-end').hidden = !(S.canEndGame() || match.ended);
 
-    // Who's leading
+    // Who's leading: a pill in the leader's colour (neutral grey when level)
     const status = $('#status');
     if (lead === -1) {
       status.textContent = 'Scores level';
+      status.style.removeProperty('--pill-bg');
+      status.style.removeProperty('--pill-fg');
     } else {
       const [a, b] = match.players.map(S.total);
+      const color = S.playerColor(match.players[lead], lead);
       status.textContent = `${playerLabel(match.players[lead], lead)} leads by ${Math.abs(a - b)}`;
+      status.style.setProperty('--pill-bg', color);
+      status.style.setProperty('--pill-fg', readableTextOn(color));
     }
     status.classList.toggle('has-leader', lead !== -1);
 
@@ -263,11 +281,9 @@
     const cont = $('#initiative-continue');
 
     $('#dlg-tp-title').textContent = `Start turning point ${match.turningPoint + 1}`;
-    $('#initiative-rule').textContent = 'Who has the initiative? ' +
-      `They gain +${S.INITIATIVE_CP} CP; the other player gains +${S.NON_INITIATIVE_CP} CP.`;
     picks.innerHTML = match.players.map((p, i) => `
       <section class="init-pick" data-player="${i}">
-        <h3><span class="swatch" style="background:${escapeHtml(p.color)}"></span>${escapeHtml(playerLabel(p, i))}</h3>
+        <h3><span class="swatch" style="background:${escapeHtml(S.playerColor(p, i))}"></span>${escapeHtml(playerLabel(p, i))}</h3>
         <button type="button" class="init-btn" aria-pressed="false"
                 aria-label="${escapeHtml(playerLabel(p, i))} has initiative">Has initiative</button>
         <p class="init-preview" aria-live="polite"></p>
@@ -279,9 +295,7 @@
         const section = $(`.init-pick[data-player="${i}"]`, picks);
         $('.init-btn', section).setAttribute('aria-pressed', String(initiative === i));
         section.classList.toggle('has-initiative', initiative === i);
-        $('.init-preview', section).textContent = gains
-          ? `+${gains[i]} CP${initiative === i ? ' (initiative)' : ''}`
-          : '';
+        $('.init-preview', section).textContent = gains ? `+${gains[i]} CP` : '';
       });
       cont.disabled = initiative === null;
     }
@@ -331,7 +345,7 @@
       const name = escapeHtml(playerLabel(p, i));
       return `
         <section class="pick" data-player="${i}">
-          <h3><span class="swatch" style="background:${escapeHtml(p.color)}"></span>${name}</h3>
+          <h3><span class="swatch" style="background:${escapeHtml(S.playerColor(p, i))}"></span>${name}</h3>
           <div class="pick-options" role="radiogroup" aria-label="${name} Primary Op">
             ${S.CATEGORIES.map((c) => `
               <button type="button" class="pick-option" role="radio" aria-checked="false"
@@ -398,7 +412,7 @@
 
     $('#summary-table').innerHTML = `
       <thead><tr><th></th>${players.map((p, i) =>
-        `<th scope="col"${win(i)}><span class="swatch" style="background:${escapeHtml(p.color)}"></span>${names[i]}` +
+        `<th scope="col"${win(i)}><span class="swatch" style="background:${escapeHtml(S.playerColor(p, i))}"></span>${names[i]}` +
         `<span class="summary-team">${escapeHtml(S.killTeamName(p) || 'No kill team')}</span></th>`).join('')}</tr></thead>
       <tbody>
         ${S.CATEGORIES.map((c) =>

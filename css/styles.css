@@ -146,8 +146,22 @@ button {
 
 #tp-next.is-end { width: auto; padding: 0 16px; font-size: 1.1rem; background: var(--primary); color: var(--primary-text); }
 
-.status { margin: 0 8px; font-weight: 700; color: var(--muted); flex: 1; text-align: right; min-width: 10ch; }
-.status.has-leader { color: var(--text); }
+/* Leader pill: app.js sets --pill-bg to the leader's colour and --pill-fg to
+   dark or light text for contrast. Without them (scores level) it's neutral. */
+.status {
+  margin: 0 0 0 auto;
+  padding: 8px 16px;
+  max-width: 100%;
+  border-radius: 999px;
+  background: var(--pill-bg, var(--btn));
+  color: var(--pill-fg, var(--text));
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
 
 /* ---------- Player panels ---------- */
 
@@ -351,16 +365,10 @@ button {
   font-weight: 800;
   transition: transform 0.08s;
 }
-.wide-btn:active:not(:disabled) { transform: scale(0.97); }
-.wide-btn:disabled {
-  border-color: var(--border);
-  background: var(--surface);
-  color: var(--muted);
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.footer-hint { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
-.footer-hint[hidden] { display: none; }
+.wide-btn:active { transform: scale(0.97); }
+.wide-btn[hidden] { display: none; }
+/* Nothing to show before the final turning point: drop the footer's space too */
+.footer:not(:has(> :not([hidden]))) { display: none; }
 
 /* ---------- Dialogs ---------- */
 
@@ -505,5 +513,5 @@ dialog.howto { padding: 0; width: min(36rem, calc(100% - 32px)); overflow: hidde
 
 @media (prefers-reduced-motion: reduce) {
   .pulse { animation: none; }
-  .step, .icon-btn, .btn, .wide-btn, .pick-option, .init-btn, .progress-fill, .player { transition: none; }
+  .step, .icon-btn, .btn, .wide-btn, .pick-option, .init-btn, .progress-fill, .player, .status { transition: none; }
 }
